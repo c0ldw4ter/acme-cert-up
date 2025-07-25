@@ -1,0 +1,20 @@
+name: cert-renewal
+namespace: ops
+schedule: '0 0 1 */1 *' # every month in 01 day in 00:00
+concurrencyPolicy: Forbid
+restartPolicy: OnFailure
+
+image:
+  repository: your_registry/image/path
+  tag: v1
+
+secrets:
+  pullSecret: registry-adeptdata-dev # sercert for pull in private repo
+  configSecret: cert-secret # secert with lockbox creds
+
+# lockbox cred keys
+envVars:
+  CF_TOKEN: CF_TOKEN
+  CF_ACCOUNT_ID: CF_ACCOUNT_ID
+  YC_CERT_ID: YC_CERT_ID
+  YC_SERVICE_ACCOUNT_ID: YC_SERVICE_ACCOUNT_ID

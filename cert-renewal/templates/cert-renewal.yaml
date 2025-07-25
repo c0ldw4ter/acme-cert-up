@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "cert-renewal.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ include "cert-renewal.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  concurrencyPolicy: {{ .Values.concurrencyPolicy }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          imagePullSecrets:
+            - name: {{ .Values.secrets.pullSecret }}
+          containers:
+            - name: {{ .Chart.Name }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              env:
+                {{- range $key, $value := .Values.envVars }}
+                - name: {{ $key }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $.Values.secrets.configSecret }}
+                      key: {{ $value }}
+                {{- end }}
+                - name: YC_KEY_FILE
+                  value: '/home/www/key/key.json'
+              volumeMounts:
+                - name: service-account-key
+                  mountPath: '/home/www/key'
+                  readOnly: true
+          volumes:
+            - name: service-account-key
+              secret:
+                secretName: {{ .Values.secrets.configSecret }}
+                items:
+                  - key: keyjson
+                    path: key.json
+          restartPolicy: {{ .Values.restartPolicy }}
